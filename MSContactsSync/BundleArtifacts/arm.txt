@@ -1,2 +1,0 @@
-MainPackage=G:\WP8.1-W10M Development\MSContactsSync\MSContactsSync\bin\ARM\Release\MSContactsSync_1.0.3.0_ARM.appx
-SymbolPackage=G:\WP8.1-W10M Development\MSContactsSync\MSContactsSync\AppPackages\MSContactsSync_1.0.3.0_Test\MSContactsSync_1.0.3.0_ARM.appxsym
