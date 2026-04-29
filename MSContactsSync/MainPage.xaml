@@ -17,17 +17,27 @@
 
                     <Border Background="#1AFFFFFF" Padding="12" Margin="0,0,0,12">
                         <StackPanel>
-                            <Button x:Name="BtnLoadJson"
-                                    Content="Load config.json"
-                                    HorizontalAlignment="Stretch"
-                                    Height="72" FontSize="18"
-                                    Click="BtnLoadJson_Click"
-                                    Margin="0,0,0,12"/>
+                                    <!-- Custom Client ID — hidden by default -->
+                            <CheckBox x:Name="ChkCustomClientId"
+                                      Content="Use custom App Registration ID"
+                                      FontSize="14"
+                                      Foreground="#AAAAAA"
+                                      Margin="0,0,0,8"
+                                      Checked="ChkCustomClientId_Changed"
+                                      Unchecked="ChkCustomClientId_Changed"/>
 
-                            <TextBlock Text="Client ID" FontSize="14"
-                                       Foreground="#AAAAAA" Margin="0,0,0,4"/>
-                            <TextBox x:Name="TxtClientId"
-                                     FontSize="16" Margin="0,0,0,16"/>
+                            <StackPanel x:Name="PanelClientId"
+                                        Visibility="Collapsed"
+                                        Margin="0,0,0,16">
+                                <TextBlock Text="App Registration Client ID"
+                                           FontSize="13" Foreground="#AAAAAA"
+                                           Margin="0,0,0,4"/>
+                                <PasswordBox x:Name="TxtClientId"
+                                             FontSize="16"
+                                             Margin="0,0,0,4"/>
+                                <TextBlock Text="Leave blank to use built-in ID"
+                                           FontSize="12" Foreground="#666666"/>
+                            </StackPanel>
 
                             <Button x:Name="BtnSignIn"
                                     Content="Sign in with Microsoft"
