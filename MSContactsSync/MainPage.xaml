@@ -47,29 +47,16 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Device code panel -->
+                    <!-- Sign in status -->
                     <Border x:Name="PanelCode"
                             Background="#222222" Padding="16"
                             Visibility="Collapsed" Margin="0,0,0,12">
                         <StackPanel>
-                            <TextBlock Text="Open this URL in a browser:"
-                                       FontSize="14" TextWrapping="Wrap"
-                                       Margin="0,0,0,8"/>
-                            <TextBlock x:Name="TxtVerificationUrl"
-                                       FontSize="14" Foreground="#0088FF"
-                                       TextWrapping="Wrap" Margin="0,0,0,16"/>
-                            <TextBlock Text="Enter this code:"
-                                       FontSize="14" Margin="0,0,0,8"/>
-                            <TextBlock x:Name="TxtUserCode"
-                                       FontSize="40" FontWeight="Bold"
-                                       Foreground="Orange"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,0,0,16"/>
-                            <ProgressBar IsIndeterminate="True" Height="6"/>
-                            <TextBlock Text="Waiting for authorization..."
-                                       FontSize="13" Foreground="#AAAAAA"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,8,0,0"/>
+                            <ProgressBar IsIndeterminate="True" Height="6"
+                                         Margin="0,0,0,8"/>
+                            <TextBlock Text="Microsoft sign-in page opening..."
+                                       FontSize="14" Foreground="#AAAAAA"
+                                       HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Border>
 

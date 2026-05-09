@@ -18,7 +18,6 @@ namespace MSContactsSync
         private readonly StringBuilder _log = new StringBuilder();
         private int _pendingLogUpdate = 0;
         private GraphApiService _api;
-        private DispatcherTimer _pollTimer;
 
         // ================================================================
         // CLIENT ID — obfuscated with XOR 42
@@ -117,36 +116,17 @@ namespace MSContactsSync
             CredentialStorage.SaveClientId(clientId);
             _api = new GraphApiService(clientId);
 
-            BtnSignIn.IsEnabled = false;
-            TxtLoginStatus.Text = "Requesting device code...";
-
-            bool ok = await _api.StartDeviceFlowAsync();
-            if (!ok)
-            {
-                TxtLoginStatus.Text = "Failed to start device flow. Check Client ID.";
-                BtnSignIn.IsEnabled = true;
-                return;
-            }
-
-            TxtVerificationUrl.Text = _api.VerificationUrl;
-            TxtUserCode.Text        = _api.UserCode;
+            BtnSignIn.IsEnabled     = false;
             PanelCode.Visibility    = Visibility.Visible;
             TxtLoginStatus.Text     = "";
 
-            _pollTimer          = new DispatcherTimer();
-            _pollTimer.Interval = TimeSpan.FromSeconds(_api.Interval);
-            _pollTimer.Tick    += PollTimer_Tick;
-            _pollTimer.Start();
-        }
+            // Open Microsoft sign-in in Edge via WebAuthenticationBroker
+            string result = await _api.StartWebAuthFlowAsync();
 
-        private async void PollTimer_Tick(object sender, object e)
-        {
-            string result = await _api.PollForTokenAsync();
+            PanelCode.Visibility = Visibility.Collapsed;
+
             if (result == "ok")
             {
-                _pollTimer.Stop();
-                PanelCode.Visibility = Visibility.Collapsed;
-
                 string accessToken = CredentialStorage.LoadAccessToken();
                 if (!string.IsNullOrEmpty(accessToken))
                 {
@@ -161,18 +141,15 @@ namespace MSContactsSync
                 TxtLoginStatus.Text = "";
                 await SaveMsalCacheAsync();
             }
-            else if (result == "authorization_pending" || result == "slow_down")
+            else if (result == "cancelled")
             {
-                if (result == "slow_down")
-                    _pollTimer.Interval =
-                        TimeSpan.FromSeconds(_pollTimer.Interval.TotalSeconds + 5);
+                TxtLoginStatus.Text = "Sign in cancelled.";
+                BtnSignIn.IsEnabled = true;
             }
             else
             {
-                _pollTimer.Stop();
-                PanelCode.Visibility = Visibility.Collapsed;
-                TxtLoginStatus.Text  = "Auth failed: " + result;
-                BtnSignIn.IsEnabled  = true;
+                TxtLoginStatus.Text = "Sign in failed: " + result;
+                BtnSignIn.IsEnabled = true;
             }
         }
 
