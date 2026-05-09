@@ -36,7 +36,117 @@ namespace MSContactsSync.Services
         }
 
         // ================================================================
-        // DEVICE FLOW — Step 1
+        // STANDARD OAUTH2 FLOW via WebAuthenticationBroker (Edge browser)
+        // ================================================================
+        private const string RedirectUri =
+            "https://login.microsoftonline.com/common/oauth2/nativeclient";
+
+        public async Task<string> StartWebAuthFlowAsync()
+        {
+            try
+            {
+                string scope = Uri.EscapeDataString(
+                    "offline_access User.Read Contacts.Read");
+                string redirect = Uri.EscapeDataString(RedirectUri);
+
+                string authUrl =
+                    "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize" +
+                    "?client_id=" + Uri.EscapeDataString(_clientId) +
+                    "&response_type=code" +
+                    "&redirect_uri=" + redirect +
+                    "&scope=" + scope +
+                    "&response_mode=query" +
+                    "&prompt=select_account";
+
+                var startUri    = new Uri(authUrl);
+                var callbackUri = new Uri(RedirectUri);
+
+                var result = await Windows.Security.Authentication.Web
+                    .WebAuthenticationBroker.AuthenticateAsync(
+                        Windows.Security.Authentication.Web
+                            .WebAuthenticationOptions.None,
+                        startUri,
+                        callbackUri);
+
+                if (result.ResponseStatus ==
+                    Windows.Security.Authentication.Web
+                        .WebAuthenticationStatus.Success)
+                {
+                    // Extract code from redirect URL
+                    string responseData = result.ResponseData;
+                    string code = ExtractQueryParam(responseData, "code");
+                    if (string.IsNullOrEmpty(code)) return "no_code";
+
+                    // Exchange code for tokens
+                    return await ExchangeCodeForTokenAsync(code);
+                }
+                else if (result.ResponseStatus ==
+                    Windows.Security.Authentication.Web
+                        .WebAuthenticationStatus.UserCancel)
+                    return "cancelled";
+                else
+                    return "error: " + result.ResponseErrorDetail;
+            }
+            catch (Exception ex)
+            {
+                return "exception: " + ex.Message;
+            }
+        }
+
+        private async Task<string> ExchangeCodeForTokenAsync(string code)
+        {
+            try
+            {
+                string body =
+                    "grant_type=authorization_code" +
+                    "&client_id=" + Uri.EscapeDataString(_clientId) +
+                    "&code=" + Uri.EscapeDataString(code) +
+                    "&redirect_uri=" + Uri.EscapeDataString(RedirectUri) +
+                    "&scope=" + Uri.EscapeDataString(
+                        "offline_access User.Read Contacts.Read");
+
+                var content  = new StringContent(body, Encoding.UTF8,
+                    "application/x-www-form-urlencoded");
+                var response = await _http.PostAsync(TokenUrl, content);
+                string json  = await response.Content.ReadAsStringAsync();
+
+                string accessToken = JsonHelper.ParseTokenValue(json, "access_token");
+                string refreshTok  = JsonHelper.ParseTokenValue(json, "refresh_token");
+
+                if (!string.IsNullOrEmpty(accessToken))
+                {
+                    CredentialStorage.SaveAccessToken(accessToken);
+                    if (!string.IsNullOrEmpty(refreshTok))
+                        CredentialStorage.SaveToken(refreshTok);
+                    string ei = JsonHelper.ParseTokenValue(json, "expires_in");
+                    int eiVal = 3600; int.TryParse(ei, out eiVal);
+                    CredentialStorage.SaveExpiry(
+                        DateTimeOffset.UtcNow.ToUnixTimeSeconds() + eiVal);
+                    return "ok";
+                }
+
+                string error = JsonHelper.ParseTokenValue(json, "error_description");
+                return "token_error: " + (error ?? json);
+            }
+            catch (Exception ex) { return "exception: " + ex.Message; }
+        }
+
+        private string ExtractQueryParam(string url, string param)
+        {
+            try
+            {
+                int idx = url.IndexOf(param + "=");
+                if (idx < 0) return null;
+                int start = idx + param.Length + 1;
+                int end   = url.IndexOf('&', start);
+                return Uri.UnescapeDataString(
+                    end < 0 ? url.Substring(start) : url.Substring(start, end - start));
+            }
+            catch { return null; }
+        }
+
+        // ================================================================
+        // DEVICE FLOW — Step 1 (kept as fallback)
         // ================================================================
         public async Task<bool> StartDeviceFlowAsync()
         {
